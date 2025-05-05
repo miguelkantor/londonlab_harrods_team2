@@ -64,6 +64,7 @@ with open(zip_path, 'rb') as f:
     top_zip_bytes = io.BytesIO(f.read())
 
 csv_records = list_csvs_in_zip(top_zip_bytes)
+csv_paths = [rec['csv_file_path'] for rec in csv_records]   # <-- add this line
 
 # Build DataFrame
 df = pd.DataFrame(csv_records)
@@ -80,14 +81,14 @@ import io
 # Open the top-level zip
 # %% -------- CONFIG --------
 import zipfile, io, pandas as pd, os
+csv_paths = [rec['csv_file_path'] for rec in csv_records]   # <-- add this line
 
 zip_path   = r'LBS.zip'
-csv_paths  = csv_records
 
-usecols = [                           # only what we need
+usecols = [
     'FLIGHT_LEG_ARRIVAL_DATE',
-    'FLIGHT_LEG_ORIGIN_COUNTRY',
-    'FLIGHT_LEG_ORIGIN_REGION',
+    'TRIP_ORIGIN_COUNTRY',
+    'TRIP_ORIGIN_REGION',
     'LOS_AT_DESTINATION_CAT',
     'LOS_AT_DESTINATION_NIGHTS',
     'PAX_PROFILE',
@@ -97,13 +98,14 @@ usecols = [                           # only what we need
 
 agg_cols = [
     'FLIGHT_LEG_ARRIVAL_DATE',
-    'FLIGHT_LEG_ORIGIN_COUNTRY',
-    'FLIGHT_LEG_ORIGIN_REGION',
+    'TRIP_ORIGIN_COUNTRY',
+    'TRIP_ORIGIN_REGION',
     'LOS_AT_DESTINATION_CAT',
     'LOS_AT_DESTINATION_NIGHTS',
     'PAX_NATIONALITY',
     'PAX_PROFILE'
 ]
+
 
 dfs = []  # collect grouped chunks here
 
@@ -121,13 +123,23 @@ with zipfile.ZipFile(zip_path) as z_top:
         df['negative_pax'] = (-df['PAX']).clip(lower=0)
 
         grouped = (
-            df.groupby(agg_cols)
+            df.groupby(agg_cols, dropna=False)
               .agg(sum_positive_pax=('positive_pax', 'sum'),
                    sum_negative_pax=('negative_pax', 'sum'),
                    flight_count     =('PAX',           'count'))
               .reset_index()
         )
-        to_remove = ['LOS_AT_DESTINATION_CAT', 'LOS_AT_DESTINATION_NIGHTS']
+        
+        # ----- diagnostics: country-loss check -----
+        raw_set     = set(df['TRIP_ORIGIN_COUNTRY'].dropna().astype(str))
+        grouped_set = set(grouped['TRIP_ORIGIN_COUNTRY'].dropna().astype(str))
+        lost        = sorted(raw_set - grouped_set)
+        
+        print(
+            f"{inner_csv_name}: {len(raw_set)} → {len(grouped_set)} countries; "
+            f"lost {len(lost)}: {lost[:10]}{' …' if len(lost) > 10 else ''}"
+        )
+        # ------------------------------------------
 
         dfs.append(grouped)
         print(f'✔ processed {inner_csv_name}')
@@ -136,20 +148,20 @@ with zipfile.ZipFile(zip_path) as z_top:
 master = pd.concat(dfs, ignore_index=True)
 # final collapse in case the same date-origin-LOS combo occurs in >1 file
 master = (
-    master.groupby(agg_cols, as_index=False)
+    master.groupby(agg_cols, dropna = False, as_index=False)
           .agg(sum_positive_pax=('sum_positive_pax', 'sum'),
                sum_negative_pax=('sum_negative_pax', 'sum'),
                flight_count    =('flight_count',     'sum'))
 )
 
-out_path = r'C:/Users/mkant/Documents/Intro to Python/CODE/flights_grouped_master.csv'
+out_path = r'C:/Users/mkant/Documents/Intro to Python/CODE/LondonLab Data/flights_grouped_master.csv'
 master.to_csv(out_path, index=False)
 print(f'✅ master saved to {out_path}')
 # %% -------- OPEN MASTER & EXPLORE --------
 import pandas as pd
 
 # Load the saved master CSV
-master_path = r'C:/Users/mkant/Documents/Intro to Python/CODE/flights_grouped_master.csv'
+master_path = r'C:/Users/mkant/Documents/Intro to Python/CODE/LondonLab Data/flights_grouped_master.csv'
 df = pd.read_csv(master_path)
 
 # Parse the date column properly
@@ -174,8 +186,8 @@ print(df.head())
 # %% RE-GROUP TO REMOVE LOS COLUMNS
 agg_cols = [
     'FLIGHT_LEG_ARRIVAL_DATE',
-    'FLIGHT_LEG_ORIGIN_COUNTRY',
-    'FLIGHT_LEG_ORIGIN_REGION',
+    'TRIP_ORIGIN_COUNTRY',
+    'TRIP_ORIGIN_REGION',
     'PAX_NATIONALITY',
     'PAX_PROFILE'
 ]
