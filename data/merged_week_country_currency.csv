@@ -1,4 +1,4 @@
-,DATE,COUNTRY,TRANSACTIONS,ARRIVALS,LHR_arrivals,non_LHR_arrivals,premium_economy_and_above_arrivals,business_and_above_arrivals,first_arrivals,transactions_non_target,transactions_target,transactions_bronze_and_above,transactions_gold_and_above,transactions_black_and_above,transactions_platinum_and_above,transactions_elite_and_above,USDGBP,EURGBP,CNYGBP,AEDGBP,INRGBP,JPYGBP 
+,DATE,COUNTRY,TRANSACTIONS,ARRIVALS,LHR_arrivals,non_LHR_arrivals,premium_economy_and_above_arrivals,business_and_above_arrivals,first_arrivals,transactions_non_target,transactions_target,transactions_bronze_and_above,transactions_gold_and_above,transactions_black_and_above,transactions_platinum_and_above,transactions_elite_and_above,USDGBP,EURGBP,CNYGBP,AEDGBP,INRGBP,JPYGBP
 0,31/01/2022,EU,465,22568,4396,18172,632,384,14,73,392,302,224,157,44,6,0.7462,0.83224,0.117324,0.2032,0.009929,0.006474
 1,31/01/2022,Greater China,764,84,84,0,13,9,0,98,666,603,510,352,154,45,0.7462,0.83224,0.117324,0.2032,0.009929,0.006474
 2,31/01/2022,Middle East - GCC,901,1463,1330,133,482,263,29,120,781,704,564,429,140,47,0.7462,0.83224,0.117324,0.2032,0.009929,0.006474
