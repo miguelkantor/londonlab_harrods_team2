@@ -126,7 +126,7 @@ flights_cabin = (
 # %% -------- Import Transactions and Group --------
 # Only keep the target variables for the flights data and transaction data
 transactions = pd.read_csv(r"C:\Users\mkant\Documents\Intro to Python\CODE\LondonLab Data\RAW_LBS_TEAM1_20250428.csv",
-                           usecols = ['CAL_DAY','CHANNEL','CALC_COUNTRY_GP','TRANX_TTL','TIER_LATEST','ZPERSONA'])
+                           usecols=['CAL_DAY','CHANNEL','CALC_COUNTRY_GP','TRANX_TTL','TIER_LATEST','ZPERSONA','MCH3'])
 transactions["CAL_DAY"] = pd.to_datetime(transactions["CAL_DAY"])
 transactions = transactions[transactions.CHANNEL == "Knightsbridge"]
 transactions = transactions[~transactions.CALC_COUNTRY_GP.isin(['UK','Russia','ROW'])]
@@ -171,6 +171,47 @@ transactions_grouped_daily_country_pivoted_targetpersona = (
 
 print("Target Persona Pivoted DF:")
 print(transactions_grouped_daily_country_pivoted_targetpersona.head())
+
+# %% Transactions by Category
+import pandas as pd
+
+# Set the category tag, seperate the low transaction value catagory
+low_value_categories = ['FOOD & BEVERAGE', 'RESTAURANTS']
+transactions['category_type'] = transactions['MCH3'].apply(
+    lambda x: 'low_value_category' if x in low_value_categories else 'high_value_category'
+)
+
+transactions_grouped_daily_country_by_category = transactions.groupby(
+    ["CAL_DAY", "CALC_COUNTRY_GP", "category_type"]
+)["TRANX_TTL"].sum().reset_index()
+
+# Rename the columns
+transactions_grouped_daily_country_by_category.rename(columns={
+    "CAL_DAY": "DATE",
+    "CALC_COUNTRY_GP": "COUNTRY",
+    "TRANX_TTL": "TRANSACTIONS"
+}, inplace=True)
+
+# Pivot data so that high and low value categories are separate columns
+transactions_grouped_daily_country_by_category = (
+    transactions_grouped_daily_country_by_category
+    .pivot(
+        index=['DATE', 'COUNTRY'],
+        columns='category_type',
+        values='TRANSACTIONS'
+    )
+    .reset_index()
+    .fillna(0)
+)
+
+# Add total transaction column
+transactions_grouped_daily_country_by_category['TRANSACTIONS_TOTAL'] = (
+    transactions_grouped_daily_country_by_category['high_value_category'] + 
+    transactions_grouped_daily_country_by_category['low_value_category']
+)
+
+print("By Category value DF:")
+print(transactions_grouped_daily_country_by_category.head())
 
 # %% Transactions by Tier
 import pandas as pd
